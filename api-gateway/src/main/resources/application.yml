@@ -1,0 +1,56 @@
+spring:
+    application:
+        name: gateway-service
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka}
+server:
+    port: ${PORT:8000}
+zuul.host.socket-timeout-millis: 20000
+zuul.host.connect-timeout-millis: 20000
+ribbon.ConnectTimeout: 10000
+ribbon.ReadTimeout: 10000
+
+
+security:
+  oauth2:
+    client:
+      clientId: ${OAUTH_CLIENT_ID:3b2371c97ffec65403ff45fc392af18da7099d2425bfd294c6f26df9171794e9} # TODO: add client id
+      clientSecret: ${OAUTH_CLIENT_SECRET:66e839340be4e7b7966915d188a4c04b2c9facbbc9761ce93c1f27dc6c02d4f6} # TODO: add client secret
+      accessTokenUri: https://gitlab.lrz.de/oauth/token
+      userAuthorizationUri: https://gitlab.lrz.de/oauth/authorize
+      scope:
+        - read_user
+        - api
+    resource:
+      userInfoUri: https://gitlab.lrz.de/api/v4/user
+
+zuul:
+    routes:
+        project-service:
+            path: "/project/**"
+            serviceId: project-service
+            stripPrefix: false
+            sensitive-headers: Cookie, Set-cookie
+        darkmode-service:
+            path: "/dark-mode/**"
+            stripPrefix: false
+            serviceId: darkmode-service
+            sensitive-headers: Cookie, Set-cookie
+        compiler-service:
+            path: "/compiler/**"
+            stripPrefix: true
+            serviceId: compiler-service
+            sensitive-headers: Cookie, Set-cookie
+        frontend-service:
+            path: "/ui/**"
+            serviceId: frontend-service
+            sensitive-headers: Cookie, Set-cookie
+            stripPrefix: false
+
+proxy:
+    auth:
+        routes:
+            project-service: oauth2
+
