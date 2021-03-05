@@ -1,0 +1,70 @@
+version: "3.7"
+
+services:
+  service-registry:
+    image: gitlab.lrz.de:5005/ase20-group5-2/onlineide/service-registry:latest
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+
+  api-gateway:
+    image: gitlab.lrz.de:5005/ase20-group5-2/onlineide/api-gateway:latest
+    restart: on-failure
+    depends_on:
+      - service-registry
+      - compiler
+      - frontend
+      - project
+      - dark-mode
+    environment: 
+      - EUREKA_SERVER=http://service-registry:8761/eureka
+    ports:
+      - "8000:8000"
+
+  compiler:
+    image: gitlab.lrz.de:5005/ase20-group5-2/onlineide/compiler:latest
+    restart: on-failure
+    environment: 
+      - EUREKA_SERVER=http://service-registry:8761/eureka
+    depends_on:
+      - service-registry
+    ports:
+      - "8081:8081"
+
+  frontend:
+    image: gitlab.lrz.de:5005/ase20-group5-2/onlineide/frontend:latest
+    restart: on-failure
+    depends_on:
+      - service-registry
+    environment: 
+      - EUREKA_SERVER=http://service-registry:8761/eureka
+    ports:
+      - "8082:8082"
+
+  project:
+    image: gitlab.lrz.de:5005/ase20-group5-2/onlineide/project:latest
+    restart: on-failure
+    depends_on:
+      - db
+      - service-registry
+    environment:
+      - JDBC_URL=jdbc:postgresql://db:5432/my_db?user=admin&password=test
+      - EUREKA_SERVER=http://service-registry:8761/eureka
+    ports:
+      - "8080:8080"
+  db:
+    image: postgres:9.6
+    environment:
+      - POSTGRES_DB=my_db
+      - POSTGRES_PASSWORD=test
+      - POSTGRES_USER=admin
+
+  dark-mode:
+    image: gitlab.lrz.de:5005/ase20-group5-2/onlineide/darkmode:latest
+    environment: 
+      - EUREKA_SERVER=http://service-registry:8761/eureka
+    depends_on:
+      - service-registry
+    restart: on-failure
+    ports:
+      - "8083:8083"
